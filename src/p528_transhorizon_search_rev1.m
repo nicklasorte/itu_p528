@@ -8,12 +8,12 @@ function [M_d, A_d0, d_crx_km, CASE, warnings] = p528_transhorizon_search_rev1(p
 %   the C++, the no-crossover default returns CONST_MODE_DIFFRACTION, whose
 %   value equals CASE_1.
 c = p528_constants_rev1();
-CASE = c.CONST_MODE_SEARCH;
+CASE = c.CONST_MODE_SEARCH; %#ok<NASGU> mirrors the C++ initialization
 k = 0;
 d_search = [path.d_ML_km + 3, path.d_ML_km + 2];   % d', d" (Eqns 3-8, 3-9)
 A_s = [0, 0];
 SEARCH_LIMIT = 100;
-for i_search = 1:SEARCH_LIMIT %#ok<FORPF> index unused, as in the C++
+for i_search = 1:SEARCH_LIMIT
     A_s(2) = A_s(1);
     tr = p528_troposcatter_rev1(t1, t2, d_search(1), f_mhz);   % Step 6.2
     A_s(1) = tr.A_s_db;
