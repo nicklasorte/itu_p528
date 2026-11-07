@@ -138,3 +138,13 @@ end
 c = p528_constants_rev1();
 verifyEqual(tc, p528_variability_rev1("find_k_99", c.NakagamiRiceCurves(10, 17) + 1e-9), c.K(10), 'AbsTol', 1e-6);
 end
+
+function test_nd_array_inputs(tc)
+% N-D grids (as from ndgrid) keep their shape, and error checks reduce over all elements.
+[D, H, P] = ndgrid([1 5], [30 121.92], [1 50 99]);
+A = p528_rev1(D, 10, H, 8160, 1, P);
+verifyEqual(tc, size(A), [2 2 3]);
+verifyEqual(tc, A(2, 2, 2), p528_rev1(5, 10, 121.92, 8160, 1, 50), 'AbsTol', 1e-12);
+D(1, 1, 1) = -1;
+verifyError(tc, @() p528_rev1(D, 10, H, 8160, 1, P), 'p528:invalidInput');
+end

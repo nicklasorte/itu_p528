@@ -67,7 +67,7 @@ end
 
 ok = rtn == 0 | rtn == 11;
 A_db(ok) = [res(ok).A_db];
-if opts.error_mode == "error" && any(~ok)
+if opts.error_mode == "error" && any(~ok, "all")
     k = find(~ok, 1);
     error('p528:invalidInput', ...
         'Element %d: reference error code %d (%s). Inputs d=%.15g km, h1=%.15g m, h2=%.15g m, f=%.15g MHz, pol=%d, p=%.15g.', ...
