@@ -24,7 +24,13 @@ if beta_1_rad > pi/2
     h_G_km = h_1_km;
     delta = h_1_km / 2;
     diff = 100;
-    while true
+    for iter = 1:200
+        if iter == 200
+            % The C++ loop is unbounded and hangs when no grazing point exists above
+            % the surface (ray steeper than the horizon dip); fail loud instead.
+            error('p676:noGrazingPoint', ...
+                'No grazing height found for h_1 = %.6g km, beta_1 = %.10g rad.', h_1_km, beta_1_rad);
+        end
         if diff > 0
             h_G_km = h_G_km - delta;
         else
