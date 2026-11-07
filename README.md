@@ -62,11 +62,23 @@ Options: `error_mode` (`"error"` raises `p528:invalidInput`, the default; `"code
 
 ## Validation
 
-`tests/test_p528_rev1.m` checks the port against:
+`tests/test_p528_rev1.m` has 12 tests. All pass in MATLAB R2025b, including the parallel check on a 2-worker pool.
 
-- The four example values in the NTIA README (to 0.1 dB).
-- 800 cases in `tests/reference_ntia_cpp.csv`, computed with the NTIA C++ code compiled from commit `74870ab` using `tools/p528_reference_driver.cpp`. The cases include the README examples, 60 drone-to-earth-station cases (10 m to 121.92 m at 8160 MHz), and 736 seeded random cases across distance, heights, frequency, polarization, and time percentage. The test requires matching return codes, propagation modes, and warnings, and agreement to 1e-6 dB on loss, free-space loss, and absorption.
-- Input validation error codes, the zero-distance case, and `parallel_flag` equivalence.
+| Test | What it checks |
+| --- | --- |
+| `test_readme_examples` | The four example values in the NTIA README, to 0.1 dB |
+| `test_against_cpp_reference` | 800 cases in `tests/reference_ntia_cpp.csv`: README examples, 60 drone-to-earth-station cases (10 m to 121.92 m at 8160 MHz), and 736 seeded random cases. Return codes, propagation modes, and warnings must match; loss, free-space loss, absorption, and distance must agree to 1e-6 dB (largest difference 2.4e-10 dB) |
+| `test_transhorizon_reference` | 300 cases in `tests/reference_ntia_cpp_transhorizon.csv` aimed at the diffraction and troposcatter regions near the radio horizon, terminal heights above 20 km (warning codes), equal heights, and a fine time-percentage sweep |
+| `test_components_against_cpp` | P.835 atmosphere at 10 heights, P.676 specific attenuation at 5 frequencies, and 5 slant paths (including one below the horizon) against `tests/reference_components_cpp.txt` |
+| `test_invalid_inputs` | Every validation error code, and the `p528:invalidInput` error |
+| `test_zero_distance_equal_heights` | Zero loss with success, as in the reference |
+| `test_free_space_floor`, `test_free_space_formula` | Short line-of-sight paths stay near free space; the free-space formula |
+| `test_physical_properties` | Loss increases with distance and doesn't decrease as the time percentage rises |
+| `test_variability_helpers` | Inverse normal CCDF against tables, Nakagami-Rice median of zero, inversion of the 99% column |
+| `test_unreachable_grazing_point_errors` | The bounded grazing-height search raises `p676:noGrazingPoint` where the C++ hangs |
+| `test_parallel_matches_serial` | `parallel_flag = 1` equals the serial result (filtered when no pool is open) |
+
+All reference data come from the NTIA C++ code compiled from commit `74870ab` with `tools/p528_reference_driver.cpp` and `tools/component_reference_driver.cpp`. Input lists are in `tests/reference_cases_input.txt` and `tests/reference_cases_transhorizon_input.txt`.
 
 To regenerate the reference file:
 
@@ -84,7 +96,7 @@ As the NTIA software release asks, this notice records how this derivative work 
 
 1. Translated from C++ to MATLAB, one file per reference source group.
 2. The ray trace (`RayTrace.cpp`) is vectorized over atmospheric layers; sums keep the C++ left-to-right order.
-3. The two unbounded binary searches on `delta_r` in `LineOfSight.cpp` stop after 2,000 steps and raise `p528:noConvergence`, where the C++ would loop forever.
+3. The two unbounded binary searches on `delta_r` in `LineOfSight.cpp` stop after 2,000 steps and raise `p528:noConvergence`, and the grazing-height search in `SlantPath.cpp` stops after 200 steps and raises `p676:noGrazingPoint`. The C++ loops forever in those cases; the grazing-height hang was reproduced with the reference build for a ray steeper than the horizon dip.
 4. Added an array wrapper (`p528_rev1`) with input expansion, an error mode, and an optional `parfor` path.
 
 ## Known differences from the Recommendation
